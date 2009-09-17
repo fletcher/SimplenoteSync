@@ -1,5 +1,5 @@
 NAME
-    Simplenote.pm - module ...
+    SimpleSync.pm - module ...
 
 SYNOPSIS
 DESCRIPTION
