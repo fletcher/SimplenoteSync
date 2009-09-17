@@ -18,6 +18,7 @@
 # TODO: Avoid overwriting existing file when downloading
 # TODO: Any special characters in title to avoid?
 # TODO: move configuration details to a dotfile for easy upgrading
+# TODO: need to compare information between local and remote files when same title in both (e.g. simplesync.db lost, or collision)
 
 use strict;
 use warnings;
@@ -449,21 +450,59 @@ sub writeSyncDatabase{
 
 =head1 NAME
 
-SimpleSync.pl - module ...
+SimpleSync.pl - synchronize a folder of text files with Simplenote.
 
-=head1 SYNOPSIS
+=head1 CONFIGURATION
 
+1 Create file in your home directory named ".simplesyncrc"
+
+2 First line is your email address
+
+3 Second line is your Simplenote password
+
+4 Third line is the directory to be used for text files
 
 
 =head1 DESCRIPTION
 
+After specifying a folder to store local text files, and the email address and
+password associated with your Simplenote account, SimpleSync will attempt to
+synchronize the information in both places.
 
+Sync information is stored in "simplesync.db". If this file is lost,
+SimpleSync will have to attempt to look for "collisions" between local files
+and existing notes. When performing the first synchronization, it's best to
+start with an empty local folder (or an empty collection of notes on
+Simplenote), and then start adding files (or notes) afterwards.
+
+=head1 WARNING
+
+Please note that this software is still in development stages - I STRONGLY
+urge you to backup all of your data before running to ensure nothing is lost.
+If you run SimpleSync on an empty local folder without a "simplesync.db" file,
+the net result will be to copy the remote notes to the local folder,
+effectively performing a backup.
+
+=head1 KNOWN ISSUES
+
+* No protection against overwriting files that have the same title
+
+* No merging when both local and remote file are changed between syncs
+
+* the code is really ugly
+
+* it's probably not very efficient and might really bog down with large
+  numbers of notes
 
 =head1 SEE ALSO
 
 Designed for use with Simplenote for iPhone:
 
+<http://www.simplenoteapp.com/>
 
+SimpleSync is available on github:
+
+<http://github.com/fletcher/SimpleSync>
 
 =head1 AUTHOR
 
