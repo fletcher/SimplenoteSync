@@ -7,15 +7,9 @@
 #
 #
 
-# Need to install Crypt::SSLeay to get https to work...
-
-
-# TODO: Need to check for duplicate filenames to avoid overwriting
-# TODO: Track previous files to know when something was deleted
 # TODO: Need lots of error checking
 # TODO: How to handle renames?
 # TODO: How to handle simultaneous edits?
-# TODO: Avoid overwriting existing file when downloading
 # TODO: Any special characters in title to avoid?
 # TODO: move configuration details to a dotfile for easy upgrading
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplesync.db lost, or collision)
@@ -129,6 +123,7 @@ sub titleToFilename {
 	my $title = shift;
 	
 	# TODO: What special characters need to be escaped?	
+	$title =~ s/[:\\\/]/ /g;
 	
 	$title .= ".txt";
 	
