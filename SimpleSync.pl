@@ -19,6 +19,7 @@
 # TODO: Any special characters in title to avoid?
 # TODO: move configuration details to a dotfile for easy upgrading
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplesync.db lost, or collision)
+# TODO: Windows/Linux compatibility
 
 use strict;
 use warnings;
@@ -37,7 +38,7 @@ my $ua = LWP::UserAgent->new;
 # Second line is your Simplenote password
 # Third line is the directory to be used for text files
 
-open (CONFIG, "<$ENV{HOME}/.simplesyncrc") or die "Unable to load config file.\n";
+open (CONFIG, "<$ENV{HOME}/.simplesyncrc") or die "Unable to load config file $ENV{HOME}/.simplesyncrc.\n";
 
 my $email = <CONFIG>;
 my $password = <CONFIG>;
