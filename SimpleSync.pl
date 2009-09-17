@@ -462,6 +462,9 @@ SimpleSync.pl - synchronize a folder of text files with Simplenote.
 
 4 Third line is the directory to be used for text files
 
+Unfortunately, you have to install Crypt::SSLeay to get https to work.  You can do this by running the following command as an administrator:
+
+sudo perl -MCPAN -e "install Crypt::SSLeay"
 
 =head1 DESCRIPTION
 
@@ -493,6 +496,8 @@ effectively performing a backup.
 
 * it's probably not very efficient and might really bog down with large
   numbers of notes
+
+* renaming notes or text files causes it to be treated as a new note
 
 =head1 SEE ALSO
 

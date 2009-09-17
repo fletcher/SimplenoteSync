@@ -10,6 +10,11 @@ CONFIGURATION
 
     4 Third line is the directory to be used for text files
 
+    Unfortunately, you have to install Crypt::SSLeay to get https to work.
+    You can do this by running the following command as an administrator:
+
+    sudo perl -MCPAN -e "install Crypt::SSLeay"
+
 DESCRIPTION
     After specifying a folder to store local text files, and the email
     address and password associated with your Simplenote account, SimpleSync
@@ -37,6 +42,8 @@ KNOWN ISSUES
 
     * it's probably not very efficient and might really bog down with large
     numbers of notes
+
+    * renaming notes or text files causes it to be treated as a new note
 
 SEE ALSO
     Designed for use with Simplenote for iPhone:
