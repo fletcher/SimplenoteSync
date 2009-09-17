@@ -30,6 +30,8 @@ use Cwd 'abs_path';
 use MIME::Base64;
 use LWP::UserAgent;
 my $ua = LWP::UserAgent->new;
+use Time::Local;
+
 
 # Configuration
 
@@ -50,18 +52,21 @@ $sync_directory = abs_path($sync_directory);
 my $url = 'https://simple-note.appspot.com/api/';
 my $token;
 
-my $debug = 1;		# enable log messages for troubleshooting
+my $debug = 0;		# enable log messages for troubleshooting
 
 
 # Initialize Database of last sync information into global array
 my $hash_ref = initSyncDatabase($sync_directory);
 my %syncNotes = %$hash_ref;
 
+
 # Initialize database of newly synchronized files
 my %newNotes = ();
 
+
 # Initialize database of files that were deleted this round
 my %deletedFromDatabase = ();
+
 
 # Get authorization token
 $token = getToken();
@@ -70,12 +75,16 @@ $token = getToken();
 # Do Synchronization
 synchronizeNotesToFolder($sync_directory);
 
+
+# Write new database for next time
 writeSyncDatabase($sync_directory);
 
 
+1;
+
 
 sub getToken {
-	# Connect to server and get a token
+	# Connect to server and get a authentication token
 
 	my $content = encode_base64("email=$email&password=$password");
 	my $response =  $ua->post($url . "login", Content => $content);
@@ -85,7 +94,7 @@ sub getToken {
 
 
 sub getNoteIndex {
-	# Get list of notes
+	# Get list of notes from simplenote server
 	my %note = ();
 
 	my $response = $ua->get($url . "index?auth=$token&email=$email");
@@ -94,7 +103,7 @@ sub getNoteIndex {
 	$index =~ s{
 		\{(.*?)\}
 	}{
-		# iterate through notes in index
+		# iterate through notes in index and load into hash
 		my $notedata = $1;
 		
 		$notedata =~ /"key":\s*"(.*?)"/;
@@ -107,23 +116,28 @@ sub getNoteIndex {
 			}
 		}
 		
-		# Trim fractions of seconds
+		# Trim fractions of seconds from modification time
 		$note{$key}{modify} =~ s/\..*$//;
 	}egx;
 	
 	return \%note;
 }
 
+
 sub titleToFilename {
+	# Convert note's title into valid filename
 	my $title = shift;
 	
-	$title .= ".txt";
+	# TODO: What special characters need to be escaped?	
 	
+	$title .= ".txt";
 	
 	return $title;
 }
 
+
 sub filenameToTitle {
+	# Convert filename into title and unescape special characters
 	my $filename = shift;
 	
 	$filename = basename ($filename);
@@ -131,33 +145,38 @@ sub filenameToTitle {
 	
 	return $filename;
 }
+
+
 sub uploadFileToNote {
+	# Given a local file, upload it as a note at simplenote web server
 	my $filepath = shift;
-	my $key = shift;
-	
+	my $key = shift;		# Supply key if we are updating existing note
 	
 	my $title = filenameToTitle($filepath);		# The title for new note
 
-	my $content = "\n";
+	my $content = "\n";							# The content for new note
 	open (INPUT, "<$filepath");
 	local $/;
-	$content .= <INPUT>;					# The content for new note
+	$content .= <INPUT>;
 	close(INPUT);
 
-	my @d=gmtime ((stat("$filepath"))[9]);
+	my @d=gmtime ((stat("$filepath"))[9]);		# get file's modification time
 	my $modified = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
 
-	@d = gmtime (readpipe ("stat -f \"%B\" \"$filepath\""));
+
+	# The following works on Mac OS X - need a "birth time", not ctime
+	@d = gmtime (readpipe ("stat -f \"%B\" \"$filepath\""));	# created time
 	my $created = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
 
 	if (defined($key)) {
 		# We are updating an old note
+		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 
 		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content));
-
 	} else {
 		# We are creating a new note
+		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 		my $createString = $created ? "&create=$created" : "";
 
@@ -166,7 +185,8 @@ sub uploadFileToNote {
 		# Return the key of the newly created note
 		$key = $response->content;
 	}
-	# Add this note to the sync'ed list
+	
+	# Add this note to the sync'ed list for writing to database
 	$newNotes{$key}{modify} = $modified;
 	$newNotes{$key}{create} = $created;
 	$newNotes{$key}{title} = $title;
@@ -175,61 +195,81 @@ sub uploadFileToNote {
 	return $key;
 }
 
+
 sub downloadNoteToFile {
+	# Save local copy of note from Simplenote server
 	my $key = shift;
 	my $directory = shift;
+	my $overwrite = shift;
 	
 	# retrieve note
 	my $response = $ua->get($url . "note?key=$key&auth=$token&email=$email&encode=base64");
 	my $content = decode_base64($response->content);
 
 	if ($content eq "") {
+		# No such note exists any longer
 		warn "$key no longer exists on server\n";
 		$deletedFromDatabase{$key} = 1;
 		return;
 	}
-	# If note is marked for deletion on the server, don't download
-	print "deleted? " . $response->header('note-deleted') . "\n" if $debug;
-	if ($response->header('note-deleted') eq "True" ){
-		warn "note $key was flagged for deletion\n";
-		$deletedFromDatabase{$key} = 1;
-		return;
-	}
-	
+
+	# Parse into title and content (if present)
 	$content =~ s/^(.*?)(\n{1,2}|\Z)//s;		# First line is title
 	my $title = $1;
 	my $filename = titleToFilename($title);
+		
+	# If note is marked for deletion on the server, don't download
+	if ($response->header('note-deleted') eq "True" ) {
+		if ($overwrite == 1) {
+			# If we're in overwrite mode, then delete local copy
+			File::Path::rmtree("$directory/$filename");
+		} else {
+			warn "note $key was flagged for deletion on server - not downloaded\n";
+			$deletedFromDatabase{$key} = 1;
+		}
+		return;
+	}
 	
-	my $create = my $createStr = $response->header('note-createdate');
+	# Get time of note creation (trim fractions of seconds)
+	my $create = my $createString = $response->header('note-createdate');
 	$create =~ /(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d):(\d\d)/;
 	$create = timegm($6,$5,$4,$3,$2-1,$1);
-	$createStr =~ s/\..*$//;
-	
-	my $modify = my $modifyStr = $response->header('note-modifydate');
+	$createString =~ s/\..*$//;
+
+	# Get time of note modification (trim fractions of seconds)	
+	my $modify = my $modifyString = $response->header('note-modifydate');
 	$modify =~ /(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d):(\d\d)/;
 	$modify = timegm($6,$5,$4,$3,$2-1,$1);
-	$modifyStr =~ s/\..*$//;
+	$modifyString =~ s/\..*$//;
 	
-	# Create new file (no overwrite protection!!!!!)
-	open (FILE, ">$directory/$filename");
-	print FILE $content;
-	close FILE;
+	# Create new file
 	
-	# Set created and modified time
-	# Not sure why this has to be done twice, but it seems to
-	utime $create, $create, "$directory/$filename";
-	utime $create, $modify, "$directory/$filename";
+	if ((-f "$directory/$filename")  && 
+		($overwrite == 0)) {
+		# A file already exists with that name, and we're not intentionally
+		#	replacing with a new copy.
+		warn "$filename already exists. Will not download.\n";
+	} else {
+		open (FILE, ">$directory/$filename");
+		print FILE $content;
+		close FILE;
 	
-	# Add this note to the sync'ed list
-	$newNotes{$key}{modify} = $modifyStr;
-	$newNotes{$key}{create} = $createStr;
-	$newNotes{$key}{file} = $filename;
-	$newNotes{$key}{title} = $title;
+		# Set created and modified time
+		# Not sure why this has to be done twice, but it seems to on Mac OS X
+		utime $create, $create, "$directory/$filename";
+		utime $create, $modify, "$directory/$filename";
 	
+		# Add this note to the sync'ed list for writing to database
+		$newNotes{$key}{modify} = $modifyString;
+		$newNotes{$key}{create} = $createString;
+		$newNotes{$key}{file} = $filename;
+		$newNotes{$key}{title} = $title;
+	}
 }
 
 
 sub deleteNoteOnline {
+	# Delete specified note from Simplenote server
 	my $key = shift;
 	
 	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email");
@@ -237,7 +277,9 @@ sub deleteNoteOnline {
 	return $response->content;
 }
 
+
 sub synchronizeNotesToFolder {
+	# Main Synchronization routine
 	my $directory = shift;
 	$directory = abs_path($directory);		# Clean up path
 
@@ -286,10 +328,10 @@ sub synchronizeNotesToFolder {
 						# Nothing more to do
 					} else {
 						# note on server has changed, but local file hasn't
-						print "\tremote file is changed\n\n" if $debug;
+						print "\tremote file is changed\n" if $debug;
 
-						# update local file
-						downloadNoteToFile($key,$directory);
+						# update local file and overwrite if necessary
+						downloadNoteToFile($key,$directory,1);
 					}
 
 					# Remove this file from other queues
@@ -351,7 +393,7 @@ sub synchronizeNotesToFolder {
 
 				# So, download from the server to resync, and
 				#	user must then re-delete if desired
-				downloadNoteToFile($key,$directory);
+				downloadNoteToFile($key,$directory,0);
 				
 				# Remove this file from other queues
 				delete($note{$key});
@@ -360,13 +402,14 @@ sub synchronizeNotesToFolder {
 		}
 	}
 	
-	# Now, we need to look at new notes on server
+	# Now, we need to look at new notes on server and download
 	
 	foreach my $key (sort keys %note) {
-		downloadNoteToFile($key, $directory);
+		# Download, but don't overwrite existing file if present
+		downloadNoteToFile($key, $directory,0);
 	}
 	
-	# Finally, we need to look at new files locally
+	# Finally, we need to look at new files locally and upload to server
 	
 	foreach my $new_file (sort keys %file) {
 		print "new local file $new_file\n" if $debug;
@@ -485,6 +528,10 @@ effectively performing a backup.
   numbers of notes
 
 * renaming notes or text files causes it to be treated as a new note
+
+* No two notes can share the same title (in this event, one will not be
+  downloaded)
+
 
 =head1 SEE ALSO
 
