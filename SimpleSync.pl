@@ -449,7 +449,7 @@ sub writeSyncDatabase{
 
 =head1 NAME
 
-SimpleSync.pm - module ...
+SimpleSync.pl - module ...
 
 =head1 SYNOPSIS
 

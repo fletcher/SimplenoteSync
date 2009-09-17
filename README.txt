@@ -1,5 +1,5 @@
 NAME
-    SimpleSync.pm - module ...
+    SimpleSync.pl - module ...
 
 SYNOPSIS
 DESCRIPTION
