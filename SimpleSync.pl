@@ -32,7 +32,7 @@ use Time::Local;
 
 # Configuration
 
-# Create file in your home directory named ".simplesync"
+# Create file in your home directory named ".simplesyncrc"
 # First line is your email address
 # Second line is your Simplenote password
 # Third line is the directory to be used for text files
@@ -394,7 +394,7 @@ sub initSyncDatabase{
 	my $directory = shift;
 	my %synchronizedNotes = ();
 	
-	if (open (DB, "<$directory/simplenote.db")) {
+	if (open (DB, "<$directory/simplesync.db")) {
 	
 		$/ = "";                # paragraph read mode
 		while (<DB>) {
@@ -422,7 +422,7 @@ sub writeSyncDatabase{
 	
 	my ($directory) = @_;
 
-	open (DB, ">$directory/simplenote.db");
+	open (DB, ">$directory/simplesync.db");
 	
 	foreach my $record (sort keys %newNotes) {
 		for my $key (sort keys %{$newNotes{$record}}) {
@@ -449,7 +449,7 @@ sub writeSyncDatabase{
 
 =head1 NAME
 
-Simplenote.pm - module ...
+SimpleSync.pm - module ...
 
 =head1 SYNOPSIS
 
