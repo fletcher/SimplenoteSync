@@ -45,6 +45,9 @@ KNOWN ISSUES
 
     * renaming notes or text files causes it to be treated as a new note
 
+    * No two notes can share the same title (in this event, only one will be
+    downloaded locally)
+
 SEE ALSO
     Designed for use with Simplenote for iPhone:
 

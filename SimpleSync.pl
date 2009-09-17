@@ -447,6 +447,7 @@ sub initSyncDatabase{
 	return \%synchronizedNotes;
 }
 
+
 sub writeSyncDatabase{
 	# from <http://docstore.mik.ua/orelly/perl/cookbook/ch11_11.htm>
 	
@@ -529,8 +530,8 @@ effectively performing a backup.
 
 * renaming notes or text files causes it to be treated as a new note
 
-* No two notes can share the same title (in this event, one will not be
-  downloaded)
+* No two notes can share the same title (in this event, only one will be
+  downloaded locally)
 
 
 =head1 SEE ALSO
