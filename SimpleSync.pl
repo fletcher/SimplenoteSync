@@ -29,7 +29,6 @@ use Cwd 'abs_path';
 use MIME::Base64;
 use LWP::UserAgent;
 my $ua = LWP::UserAgent->new;
-use Time::Local;
 
 # Configuration
 
@@ -50,7 +49,7 @@ $sync_directory = abs_path($sync_directory);
 my $url = 'https://simple-note.appspot.com/api/';
 my $token;
 
-my $debug = 0;		# enable log messages for troubleshooting
+my $debug = 1;		# enable log messages for troubleshooting
 
 
 # Initialize Database of last sync information into global array
@@ -114,14 +113,30 @@ sub getNoteIndex {
 	return \%note;
 }
 
+sub titleToFilename {
+	my $title = shift;
+	
+	$title .= ".txt";
+	
+	
+	return $title;
+}
 
+sub filenameToTitle {
+	my $filename = shift;
+	
+	$filename = basename ($filename);
+	$filename =~ s/\.txt$//;
+	
+	return $filename;
+}
 sub uploadFileToNote {
 	my $filepath = shift;
 	my $key = shift;
 	
 	
-	my $title = basename ($filepath);		# The title for new note
-	$title =~ s/\.txt//;
+	my $title = filenameToTitle($filepath);		# The title for new note
+
 	my $content = "\n";
 	open (INPUT, "<$filepath");
 	local $/;
@@ -154,7 +169,7 @@ sub uploadFileToNote {
 	$newNotes{$key}{modify} = $modified;
 	$newNotes{$key}{create} = $created;
 	$newNotes{$key}{title} = $title;
-	$newNotes{$key}{file} = $title . ".txt";
+	$newNotes{$key}{file} = titleToFilename($title);
 	
 	return $key;
 }
@@ -182,7 +197,7 @@ sub downloadNoteToFile {
 	
 	$content =~ s/^(.*?)(\n{1,2}|\Z)//s;		# First line is title
 	my $title = $1;
-	$title .= ".txt";
+	my $filename = titleToFilename($title);
 	
 	my $create = my $createStr = $response->header('note-createdate');
 	$create =~ /(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d):(\d\d)/;
@@ -195,51 +210,21 @@ sub downloadNoteToFile {
 	$modifyStr =~ s/\..*$//;
 	
 	# Create new file (no overwrite protection!!!!!)
-	open (FILE, ">$directory/$title");
+	open (FILE, ">$directory/$filename");
 	print FILE $content;
 	close FILE;
 	
 	# Set created and modified time
 	# Not sure why this has to be done twice, but it seems to
-	utime $create, $create, "$directory/$title";
-	utime $create, $modify, "$directory/$title";
+	utime $create, $create, "$directory/$filename";
+	utime $create, $modify, "$directory/$filename";
 	
 	# Add this note to the sync'ed list
 	$newNotes{$key}{modify} = $modifyStr;
 	$newNotes{$key}{create} = $createStr;
-	$newNotes{$key}{file} = $title;
-	$title =~ s/\.txt$//;
+	$newNotes{$key}{file} = $filename;
 	$newNotes{$key}{title} = $title;
 	
-}
-
-
-sub downloadNotes {
-	my $directory = shift;		# Where to put the text files
-
-	# This is a fairly "dumb" routine.  Just downloads all notes
-	# on server, overwriting anything in it's way...
-	
-	$directory = abs_path($directory);		# Clean up path
-	
-	if (! -d $directory) {
-		# Target directory doesn't exist
-		die "Destination directory $directory does not exist\n";
-	}
-	
-	# get list of existing notes
-	my $note_ref = getNoteIndex();
-	my %note = %$note_ref;
-	
-	foreach my $key (keys %note) {
-		# iterate through notes and write each to a text file
-
-		if ($note{$key}{deleted} eq "false") {
-			# Only download if note isn't marked as deleted
-		
-			downloadNoteToFile($key, $directory);
-		}
-	}
 }
 
 
@@ -462,7 +447,8 @@ SimpleSync.pl - synchronize a folder of text files with Simplenote.
 
 4 Third line is the directory to be used for text files
 
-Unfortunately, you have to install Crypt::SSLeay to get https to work.  You can do this by running the following command as an administrator:
+Unfortunately, you have to install Crypt::SSLeay to get https to work. You can
+do this by running the following command as an administrator:
 
 sudo perl -MCPAN -e "install Crypt::SSLeay"
 
