@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# SimpleSync.pl
+# SimplenoteSync.pl
 #
 # Copyright (c) 2009 Fletcher T. Penney
 #	<http://fletcherpenney.net/>
@@ -10,9 +10,7 @@
 # TODO: Need lots of error checking
 # TODO: How to handle renames?
 # TODO: How to handle simultaneous edits?
-# TODO: Any special characters in title to avoid?
-# TODO: move configuration details to a dotfile for easy upgrading
-# TODO: need to compare information between local and remote files when same title in both (e.g. simplesync.db lost, or collision)
+# TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
 # TODO: Windows/Linux compatibility
 
 use strict;
@@ -25,16 +23,17 @@ use MIME::Base64;
 use LWP::UserAgent;
 my $ua = LWP::UserAgent->new;
 use Time::Local;
+use File::Copy;
 
 
 # Configuration
-
-# Create file in your home directory named ".simplesyncrc"
+#
+# Create file in your home directory named ".simplenotesyncrc"
 # First line is your email address
 # Second line is your Simplenote password
 # Third line is the directory to be used for text files
 
-open (CONFIG, "<$ENV{HOME}/.simplesyncrc") or die "Unable to load config file $ENV{HOME}/.simplesyncrc.\n";
+open (CONFIG, "<$ENV{HOME}/.simplenotesyncrc") or die "Unable to load config file $ENV{HOME}/.simplenotesyncrc.\n";
 
 my $email = <CONFIG>;
 my $password = <CONFIG>;
@@ -46,7 +45,10 @@ $sync_directory = abs_path($sync_directory);
 my $url = 'https://simple-note.appspot.com/api/';
 my $token;
 
-my $debug = 0;		# enable log messages for troubleshooting
+
+# Options
+my $debug = 0;				# enable log messages for troubleshooting
+my $store_base_text = 1;	# Trial mode to allow conflict resolution
 
 
 # Initialize Database of last sync information into global array
@@ -122,7 +124,7 @@ sub titleToFilename {
 	# Convert note's title into valid filename
 	my $title = shift;
 	
-	# TODO: What special characters need to be escaped?	
+	# Strip prohibited characters
 	$title =~ s/[:\\\/]/ /g;
 	
 	$title .= ".txt";
@@ -186,6 +188,10 @@ sub uploadFileToNote {
 	$newNotes{$key}{create} = $created;
 	$newNotes{$key}{title} = $title;
 	$newNotes{$key}{file} = titleToFilename($title);
+
+	# Put a copy of note in storage
+	my $copy = dirname($filepath) . "/SimplenoteSync Storage/" . basename($filepath);
+	copy($filepath,$copy);
 	
 	return $key;
 }
@@ -196,6 +202,7 @@ sub downloadNoteToFile {
 	my $key = shift;
 	my $directory = shift;
 	my $overwrite = shift;
+	my $storage_directory = "$directory/SimplenoteSync Storage";
 	
 	# retrieve note
 	my $response = $ua->get($url . "note?key=$key&auth=$token&email=$email&encode=base64");
@@ -218,8 +225,11 @@ sub downloadNoteToFile {
 		if ($overwrite == 1) {
 			# If we're in overwrite mode, then delete local copy
 			File::Path::rmtree("$directory/$filename");
+			
+			# Delete storage copy
+			File::Path::rmtree("$storage_directory/$filename");
 		} else {
-			warn "note $key was flagged for deletion on server - not downloaded\n";
+			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
 			$deletedFromDatabase{$key} = 1;
 		}
 		return;
@@ -248,6 +258,11 @@ sub downloadNoteToFile {
 		open (FILE, ">$directory/$filename");
 		print FILE $content;
 		close FILE;
+
+		# Put a copy in storage
+		open (FILE, ">$storage_directory/$filename");
+		print FILE $content;
+		close FILE;
 	
 		# Set created and modified time
 		# Not sure why this has to be done twice, but it seems to on Mac OS X
@@ -273,6 +288,15 @@ sub deleteNoteOnline {
 }
 
 
+sub mergeConflicts{
+	# Both the local copy and server copy were changed since last sync
+	# We'll merge the changes into a new master file, and flag any conflicts
+	my $key = shift;
+	
+	
+}
+
+
 sub synchronizeNotesToFolder {
 	# Main Synchronization routine
 	my $directory = shift;
@@ -281,6 +305,13 @@ sub synchronizeNotesToFolder {
 	if (! -d $directory) {
 		# Target directory doesn't exist
 		die "Destination directory $directory does not exist\n";
+	}
+	
+	my $storage_directory = "$directory/SimplenoteSync Storage";
+	if (! -e $storage_directory) {
+		# This directory saves a copy of the text at each successful sync
+		#	to allow three way merging
+		mkdir $storage_directory;
 	}
 	
 	# get list of existing notes from server with mod date and delete status
@@ -356,10 +387,13 @@ sub synchronizeNotesToFolder {
 					delete($file{"$directory/$filename"});
 				} else {
 					# note on server has also changed
+					warn "$filename was modified locally and on server - please check file for conflicts.\n";
 
-					# Need to merge the two files TODO ****
+					# Use the stored copy from last sync to enable a three way
+					#	merge, then use this as the official copy and allow
+					#	user to manually edit any conflicts
 
-					print "Collision with $filename\n"; # if $debug;
+					mergeConflicts($key);
 
 					# Remove this file from other queues
 					delete($note{$key});
@@ -384,7 +418,7 @@ sub synchronizeNotesToFolder {
 				
 			} else {
 				# note on server has also changed
-				warn "Collision with $filename\n"; # if $debug;
+				warn "$filename deleted locally but modified on server\n";
 
 				# So, download from the server to resync, and
 				#	user must then re-delete if desired
@@ -419,7 +453,7 @@ sub initSyncDatabase{
 	my $directory = shift;
 	my %synchronizedNotes = ();
 	
-	if (open (DB, "<$directory/simplesync.db")) {
+	if (open (DB, "<$directory/simplenotesync.db")) {
 	
 		$/ = "";                # paragraph read mode
 		while (<DB>) {
@@ -448,7 +482,7 @@ sub writeSyncDatabase{
 	
 	my ($directory) = @_;
 
-	open (DB, ">$directory/simplesync.db");
+	open (DB, ">$directory/simplenotesync.db");
 	
 	foreach my $record (sort keys %newNotes) {
 		for my $key (sort keys %{$newNotes{$record}}) {
@@ -475,11 +509,11 @@ sub writeSyncDatabase{
 
 =head1 NAME
 
-SimpleSync.pl - synchronize a folder of text files with Simplenote.
+SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
 
 =head1 CONFIGURATION
 
-1 Create file in your home directory named ".simplesyncrc"
+1 Create file in your home directory named ".simplenotesyncrc"
 
 2 First line is your email address
 
@@ -495,11 +529,11 @@ sudo perl -MCPAN -e "install Crypt::SSLeay"
 =head1 DESCRIPTION
 
 After specifying a folder to store local text files, and the email address and
-password associated with your Simplenote account, SimpleSync will attempt to
+password associated with your Simplenote account, SimplenoteSync will attempt to
 synchronize the information in both places.
 
-Sync information is stored in "simplesync.db". If this file is lost,
-SimpleSync will have to attempt to look for "collisions" between local files
+Sync information is stored in "simplenotesync.db". If this file is lost,
+SimplenoteSync will have to attempt to look for "collisions" between local files
 and existing notes. When performing the first synchronization, it's best to
 start with an empty local folder (or an empty collection of notes on
 Simplenote), and then start adding files (or notes) afterwards.
@@ -508,7 +542,7 @@ Simplenote), and then start adding files (or notes) afterwards.
 
 Please note that this software is still in development stages - I STRONGLY
 urge you to backup all of your data before running to ensure nothing is lost.
-If you run SimpleSync on an empty local folder without a "simplesync.db" file,
+If you run SimplenoteSync on an empty local folder without a "simplenotesync.db" file,
 the net result will be to copy the remote notes to the local folder,
 effectively performing a backup.
 
@@ -535,9 +569,9 @@ Designed for use with Simplenote for iPhone:
 
 <http://www.simplenoteapp.com/>
 
-SimpleSync is available on github:
+SimplenoteSync is available on github:
 
-<http://github.com/fletcher/SimpleSync>
+<http://github.com/fletcher/SimplenoteSync>
 
 =head1 AUTHOR
 

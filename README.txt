@@ -1,8 +1,8 @@
 NAME
-    SimpleSync.pl - synchronize a folder of text files with Simplenote.
+    SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
 
 CONFIGURATION
-    1 Create file in your home directory named ".simplesyncrc"
+    1 Create file in your home directory named ".simplenotesyncrc"
 
     2 First line is your email address
 
@@ -17,21 +17,23 @@ CONFIGURATION
 
 DESCRIPTION
     After specifying a folder to store local text files, and the email
-    address and password associated with your Simplenote account, SimpleSync
-    will attempt to synchronize the information in both places.
+    address and password associated with your Simplenote account,
+    SimplenoteSync will attempt to synchronize the information in both
+    places.
 
-    Sync information is stored in "simplesync.db". If this file is lost,
-    SimpleSync will have to attempt to look for "collisions" between local
-    files and existing notes. When performing the first synchronization,
-    it's best to start with an empty local folder (or an empty collection of
-    notes on Simplenote), and then start adding files (or notes) afterwards.
+    Sync information is stored in "simplenotesync.db". If this file is lost,
+    SimplenoteSync will have to attempt to look for "collisions" between
+    local files and existing notes. When performing the first
+    synchronization, it's best to start with an empty local folder (or an
+    empty collection of notes on Simplenote), and then start adding files
+    (or notes) afterwards.
 
 WARNING
     Please note that this software is still in development stages - I
     STRONGLY urge you to backup all of your data before running to ensure
-    nothing is lost. If you run SimpleSync on an empty local folder without
-    a "simplesync.db" file, the net result will be to copy the remote notes
-    to the local folder, effectively performing a backup.
+    nothing is lost. If you run SimplenoteSync on an empty local folder
+    without a "simplenotesync.db" file, the net result will be to copy the
+    remote notes to the local folder, effectively performing a backup.
 
 KNOWN ISSUES
     * No protection against overwriting files that have the same title
@@ -53,9 +55,9 @@ SEE ALSO
 
     <http://www.simplenoteapp.com/>
 
-    SimpleSync is available on github:
+    SimplenoteSync is available on github:
 
-    <http://github.com/fletcher/SimpleSync>
+    <http://github.com/fletcher/SimplenoteSync>
 
 AUTHOR
     Fletcher T. Penney, <owner@fletcherpenney.net>
