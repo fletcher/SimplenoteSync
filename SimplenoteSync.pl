@@ -60,7 +60,7 @@ my $token;
 
 # Options
 my $debug = 0;				# enable log messages for troubleshooting
-my $store_base_text = 1;	# Trial mode to allow conflict resolution
+my $store_base_text = 0;	# Trial mode to allow conflict resolution
 
 
 # Initialize Database of last sync information into global array
@@ -202,9 +202,11 @@ sub uploadFileToNote {
 	$newNotes{$key}{title} = $title;
 	$newNotes{$key}{file} = titleToFilename($title);
 
-	# Put a copy of note in storage
-	my $copy = dirname($filepath) . "/SimplenoteSync Storage/" . basename($filepath);
-	copy($filepath,$copy);
+	if ($store_base_text) {
+		# Put a copy of note in storage
+		my $copy = dirname($filepath) . "/SimplenoteSync Storage/" . basename($filepath);
+		copy($filepath,$copy);		
+	}
 	
 	return $key;
 }
@@ -239,8 +241,10 @@ sub downloadNoteToFile {
 			# If we're in overwrite mode, then delete local copy
 			File::Path::rmtree("$directory/$filename");
 			
-			# Delete storage copy
-			File::Path::rmtree("$storage_directory/$filename");
+			if ($store_base_text) {
+				# Delete storage copy
+				File::Path::rmtree("$storage_directory/$filename");
+			}
 		} else {
 			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
 			$deletedFromDatabase{$key} = 1;
@@ -272,10 +276,12 @@ sub downloadNoteToFile {
 		print FILE $content;
 		close FILE;
 
-		# Put a copy in storage
-		open (FILE, ">$storage_directory/$filename");
-		print FILE $content;
-		close FILE;
+		if ($store_base_text) {
+			# Put a copy in storage
+			open (FILE, ">$storage_directory/$filename");
+			print FILE $content;
+			close FILE;
+		}
 	
 		# Set created and modified time
 		# Not sure why this has to be done twice, but it seems to on Mac OS X
@@ -321,7 +327,7 @@ sub synchronizeNotesToFolder {
 	}
 	
 	my $storage_directory = "$directory/SimplenoteSync Storage";
-	if (! -e $storage_directory) {
+	if ((! -e $storage_directory) && $store_base_text) {
 		# This directory saves a copy of the text at each successful sync
 		#	to allow three way merging
 		mkdir $storage_directory;
