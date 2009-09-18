@@ -511,6 +511,10 @@ sub writeSyncDatabase{
 
 SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
 
+
+Of note, this software is not created by or endorsed by Cloud Factory, the
+creators of Simplenote.
+
 =head1 CONFIGURATION
 
 1 Create file in your home directory named ".simplenotesyncrc"
