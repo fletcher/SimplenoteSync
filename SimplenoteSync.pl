@@ -37,10 +37,22 @@ open (CONFIG, "<$ENV{HOME}/.simplenotesyncrc") or die "Unable to load config fil
 
 my $email = <CONFIG>;
 my $password = <CONFIG>;
-my $sync_directory = <CONFIG>;
+my $rc_directory = <CONFIG>;
+my $sync_directory;
+
 close CONFIG;
-chomp ($email, $password, $sync_directory);
-$sync_directory = abs_path($sync_directory);
+chomp ($email, $password, $rc_directory);
+
+if ($rc_directory eq "") {
+	# If a valid directory isn't specified, then don't keep going
+	die "A directory was not specified.\n";
+};
+
+if ($sync_directory = abs_path($rc_directory)) {
+} else {
+	# If a valid directory isn't specified, then don't keep going
+	die "$rc_directory does not appear to be a valid directory.\n";
+};
 
 my $url = 'https://simple-note.appspot.com/api/';
 my $token;
@@ -84,8 +96,9 @@ sub getToken {
 
 	my $content = encode_base64("email=$email&password=$password");
 	my $response =  $ua->post($url . "login", Content => $content);
+	die "Error logging into Simplenote server.\n" unless $response->is_success;
 
-	return $response->content;	
+	return $response->content;
 }
 
 
