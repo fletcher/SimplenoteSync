@@ -36,19 +36,18 @@ WARNING
     remote notes to the local folder, effectively performing a backup.
 
 KNOWN ISSUES
-    * No protection against overwriting files that have the same title
-
     * No merging when both local and remote file are changed between syncs
 
-    * the code is really ugly
+    * the code is still somewhat ugly
 
     * it's probably not very efficient and might really bog down with large
     numbers of notes
 
-    * renaming notes or text files causes it to be treated as a new note
+    * renaming notes or text files causes it to be treated as a new note -
+    probably not all bad, but not sure what else to do
 
     * No two notes can share the same title (in this event, only one will be
-    downloaded locally)
+    downloaded locally, the others will trigger a warning at each sync)
 
 SEE ALSO
     Designed for use with Simplenote for iPhone:

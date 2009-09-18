@@ -529,38 +529,37 @@ sudo perl -MCPAN -e "install Crypt::SSLeay"
 =head1 DESCRIPTION
 
 After specifying a folder to store local text files, and the email address and
-password associated with your Simplenote account, SimplenoteSync will attempt to
-synchronize the information in both places.
+password associated with your Simplenote account, SimplenoteSync will attempt
+to synchronize the information in both places.
 
 Sync information is stored in "simplenotesync.db". If this file is lost,
-SimplenoteSync will have to attempt to look for "collisions" between local files
-and existing notes. When performing the first synchronization, it's best to
-start with an empty local folder (or an empty collection of notes on
+SimplenoteSync will have to attempt to look for "collisions" between local
+files and existing notes. When performing the first synchronization, it's best
+to start with an empty local folder (or an empty collection of notes on
 Simplenote), and then start adding files (or notes) afterwards.
 
 =head1 WARNING
 
 Please note that this software is still in development stages - I STRONGLY
 urge you to backup all of your data before running to ensure nothing is lost.
-If you run SimplenoteSync on an empty local folder without a "simplenotesync.db" file,
-the net result will be to copy the remote notes to the local folder,
-effectively performing a backup.
+If you run SimplenoteSync on an empty local folder without a
+"simplenotesync.db" file, the net result will be to copy the remote notes to
+the local folder, effectively performing a backup.
 
 =head1 KNOWN ISSUES
 
-* No protection against overwriting files that have the same title
-
 * No merging when both local and remote file are changed between syncs
 
-* the code is really ugly
+* the code is still somewhat ugly
 
 * it's probably not very efficient and might really bog down with large
   numbers of notes
 
-* renaming notes or text files causes it to be treated as a new note
+* renaming notes or text files causes it to be treated as a new note -
+  probably not all bad, but not sure what else to do
 
 * No two notes can share the same title (in this event, only one will be
-  downloaded locally)
+  downloaded locally, the others will trigger a warning at each sync)
 
 
 =head1 SEE ALSO
