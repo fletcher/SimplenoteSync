@@ -55,6 +55,10 @@ SEE ALSO
 
     <http://www.simplenoteapp.com/>
 
+    The SimplenoteSync homepage is:
+
+    <http://fletcherpenney.net/other_projects/simplenotesync/>
+
     SimplenoteSync is available on github:
 
     <http://github.com/fletcher/SimplenoteSync>
