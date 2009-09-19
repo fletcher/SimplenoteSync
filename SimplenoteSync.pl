@@ -315,9 +315,12 @@ sub deleteNoteOnline {
 	# Delete specified note from Simplenote server
 	my $key = shift;
 	
-	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email") if ($allow_server_updates);
-	
-	return $response->content;
+	if ($allow_server_updates) {
+		my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email");
+		return $response->content;
+	} else {
+		return "";
+	}
 }
 
 
