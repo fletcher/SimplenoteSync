@@ -591,6 +591,21 @@ If you run SimplenoteSync on an empty local folder without a
 "simplenotesync.db" file, the net result will be to copy the remote notes to
 the local folder, effectively performing a backup.
 
+=head1 TROUBLESHOOTING
+
+If SimplenoteSync isn't working, I've tried to add more (and better) error
+messages. Common problems so far include:
+
+* Not installing Crypt::SSLeay
+
+* Errors in the "simplenotesyncrc" file
+
+Optionally, you can enable or disable writing changes to either the local
+directory or to the Simplenote web server. For example, if you want to attempt
+to copy files to your computer without risking your remote data, you can
+disable "$allow_server_updates". Or, you can disable "$allow_local_updates" to
+protect your local data.
+
 =head1 KNOWN ISSUES
 
 * No merging when both local and remote file are changed between syncs
