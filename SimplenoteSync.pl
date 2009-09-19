@@ -536,13 +536,17 @@ creators of Simplenote.
 
 =head1 CONFIGURATION
 
-1 Create file in your home directory named ".simplenotesyncrc"
+BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF YOU
+AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!
 
-2 First line is your email address
+Create file in your home directory named ".simplenotesyncrc" with the
+following contents:
 
-3 Second line is your Simplenote password
+1. First line is your email address
 
-4 Third line is the directory to be used for text files
+2. Second line is your Simplenote password
+
+3. Third line is the directory to be used for text files
 
 Unfortunately, you have to install Crypt::SSLeay to get https to work. You can
 do this by running the following command as an administrator:
