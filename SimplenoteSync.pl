@@ -60,6 +60,7 @@ my $token;
 
 # Options
 my $debug = 0;				# enable log messages for troubleshooting
+my $safety_mode = 0;		# Don't actually write any changes
 my $store_base_text = 0;	# Trial mode to allow conflict resolution
 
 
@@ -96,6 +97,11 @@ sub getToken {
 
 	my $content = encode_base64("email=$email&password=$password");
 	my $response =  $ua->post($url . "login", Content => $content);
+
+	if ($response->content =~ /Invalid argument/) {
+		die "Problem connecting to web server.\nHave you installed Crypt:SSLeay as instructed?\n";
+	}
+
 	die "Error logging into Simplenote server.\n" unless $response->is_success;
 
 	return $response->content;
@@ -183,17 +189,21 @@ sub uploadFileToNote {
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 
-		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content));
+		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content)) if (! $safety_mode);
 	} else {
 		# We are creating a new note
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 		my $createString = $created ? "&create=$created" : "";
 
-		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content));
+		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content)) if (! $safety_mode);
 		
 		# Return the key of the newly created note
-		$key = $response->content;
+		if ($safety_mode) {
+			$key = 0;
+		} else {
+			$key = $response->content;
+		}
 	}
 	
 	# Add this note to the sync'ed list for writing to database
@@ -202,7 +212,7 @@ sub uploadFileToNote {
 	$newNotes{$key}{title} = $title;
 	$newNotes{$key}{file} = titleToFilename($title);
 
-	if ($store_base_text) {
+	if (($store_base_text) && (! $safety_mode)) {
 		# Put a copy of note in storage
 		my $copy = dirname($filepath) . "/SimplenoteSync Storage/" . basename($filepath);
 		copy($filepath,$copy);		
@@ -239,11 +249,11 @@ sub downloadNoteToFile {
 	if ($response->header('note-deleted') eq "True" ) {
 		if ($overwrite == 1) {
 			# If we're in overwrite mode, then delete local copy
-			File::Path::rmtree("$directory/$filename");
+			File::Path::rmtree("$directory/$filename") if (! $safety_mode);
 			
 			if ($store_base_text) {
 				# Delete storage copy
-				File::Path::rmtree("$storage_directory/$filename");
+				File::Path::rmtree("$storage_directory/$filename") if (! $safety_mode);
 			}
 		} else {
 			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
@@ -272,23 +282,26 @@ sub downloadNoteToFile {
 		#	replacing with a new copy.
 		warn "$filename already exists. Will not download.\n";
 	} else {
-		open (FILE, ">$directory/$filename");
-		print FILE $content;
-		close FILE;
-
-		if ($store_base_text) {
-			# Put a copy in storage
-			open (FILE, ">$storage_directory/$filename");
+		if (! $safety_mode) {
+			open (FILE, ">$directory/$filename");
 			print FILE $content;
 			close FILE;
+
+			if ($store_base_text) {
+				# Put a copy in storage
+				open (FILE, ">$storage_directory/$filename");
+				print FILE $content;
+				close FILE;
+			}
+
+			# Set created and modified time
+			# Not sure why this has to be done twice, but it seems to on Mac OS X
+			utime $create, $create, "$directory/$filename";
+			utime $create, $modify, "$directory/$filename";
+
+			# Add this note to the sync'ed list for writing to database
 		}
 	
-		# Set created and modified time
-		# Not sure why this has to be done twice, but it seems to on Mac OS X
-		utime $create, $create, "$directory/$filename";
-		utime $create, $modify, "$directory/$filename";
-	
-		# Add this note to the sync'ed list for writing to database
 		$newNotes{$key}{modify} = $modifyString;
 		$newNotes{$key}{create} = $createString;
 		$newNotes{$key}{file} = $filename;
@@ -301,7 +314,7 @@ sub deleteNoteOnline {
 	# Delete specified note from Simplenote server
 	my $key = shift;
 	
-	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email");
+	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email") if (! $safety_mode);
 	
 	return $response->content;
 }
@@ -385,7 +398,7 @@ sub synchronizeNotesToFolder {
 				} else {
 					# remote file is gone, delete local
 					print "\tdelete $filename\n" if $debug;
-					File::Path::rmtree("$directory/$filename");
+					File::Path::rmtree("$directory/$filename") if (! $safety_mode);
 					$deletedFromDatabase{$key} = 1;
 					delete($note{$key});
 					delete($file{"$directory/$filename"});
@@ -499,6 +512,7 @@ sub initSyncDatabase{
 sub writeSyncDatabase{
 	# from <http://docstore.mik.ua/orelly/perl/cookbook/ch11_11.htm>
 	
+	return 0 	if ($safety_mode);
 	my ($directory) = @_;
 
 	open (DB, ">$directory/simplenotesync.db");
