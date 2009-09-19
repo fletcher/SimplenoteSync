@@ -59,9 +59,10 @@ my $token;
 
 
 # Options
-my $debug = 0;				# enable log messages for troubleshooting
-my $safety_mode = 0;		# Don't actually write any changes
-my $store_base_text = 0;	# Trial mode to allow conflict resolution
+my $debug = 0;					# enable log messages for troubleshooting
+my $allow_local_updates = 1;	# Allow changes to local text files
+my $allow_server_updates = 1;	# Allow changes to Simplenote server
+my $store_base_text = 0;		# Trial mode to allow conflict resolution
 
 
 # Initialize Database of last sync information into global array
@@ -189,20 +190,20 @@ sub uploadFileToNote {
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 
-		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content)) if (! $safety_mode);
+		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 	} else {
 		# We are creating a new note
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 		my $createString = $created ? "&create=$created" : "";
 
-		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content)) if (! $safety_mode);
+		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 		
 		# Return the key of the newly created note
-		if ($safety_mode) {
-			$key = 0;
-		} else {
+		if ($allow_server_updates) {
 			$key = $response->content;
+		} else {
+			$key = 0;
 		}
 	}
 	
@@ -212,7 +213,7 @@ sub uploadFileToNote {
 	$newNotes{$key}{title} = $title;
 	$newNotes{$key}{file} = titleToFilename($title);
 
-	if (($store_base_text) && (! $safety_mode)) {
+	if (($store_base_text) && ($allow_local_updates)) {
 		# Put a copy of note in storage
 		my $copy = dirname($filepath) . "/SimplenoteSync Storage/" . basename($filepath);
 		copy($filepath,$copy);		
@@ -247,13 +248,13 @@ sub downloadNoteToFile {
 		
 	# If note is marked for deletion on the server, don't download
 	if ($response->header('note-deleted') eq "True" ) {
-		if ($overwrite == 1) {
+		if (($overwrite == 1) && ($allow_local_updates)) {
 			# If we're in overwrite mode, then delete local copy
-			File::Path::rmtree("$directory/$filename") if (! $safety_mode);
+			File::Path::rmtree("$directory/$filename");
 			
 			if ($store_base_text) {
 				# Delete storage copy
-				File::Path::rmtree("$storage_directory/$filename") if (! $safety_mode);
+				File::Path::rmtree("$storage_directory/$filename");
 			}
 		} else {
 			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
@@ -282,7 +283,7 @@ sub downloadNoteToFile {
 		#	replacing with a new copy.
 		warn "$filename already exists. Will not download.\n";
 	} else {
-		if (! $safety_mode) {
+		if ($allow_local_updates) {
 			open (FILE, ">$directory/$filename");
 			print FILE $content;
 			close FILE;
@@ -314,7 +315,7 @@ sub deleteNoteOnline {
 	# Delete specified note from Simplenote server
 	my $key = shift;
 	
-	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email") if (! $safety_mode);
+	my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email") if ($allow_server_updates);
 	
 	return $response->content;
 }
@@ -398,7 +399,7 @@ sub synchronizeNotesToFolder {
 				} else {
 					# remote file is gone, delete local
 					print "\tdelete $filename\n" if $debug;
-					File::Path::rmtree("$directory/$filename") if (! $safety_mode);
+					File::Path::rmtree("$directory/$filename") if ($allow_local_updates);
 					$deletedFromDatabase{$key} = 1;
 					delete($note{$key});
 					delete($file{"$directory/$filename"});
@@ -512,7 +513,7 @@ sub initSyncDatabase{
 sub writeSyncDatabase{
 	# from <http://docstore.mik.ua/orelly/perl/cookbook/ch11_11.htm>
 	
-	return 0 	if ($safety_mode);
+	return 0 if (!$allow_local_updates);
 	my ($directory) = @_;
 
 	open (DB, ">$directory/simplenotesync.db");
