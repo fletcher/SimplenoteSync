@@ -546,7 +546,7 @@ SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
 
 
 Of note, this software is not created by or endorsed by Cloud Factory, the
-creators of Simplenote.
+creators of Simplenote, or anyone else for that matter.
 
 =head1 CONFIGURATION
 

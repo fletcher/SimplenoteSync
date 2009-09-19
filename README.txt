@@ -2,7 +2,7 @@ NAME
     SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
 
     Of note, this software is not created by or endorsed by Cloud Factory,
-    the creators of Simplenote.
+    the creators of Simplenote, or anyone else for that matter.
 
 CONFIGURATION
     BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF
