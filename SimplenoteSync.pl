@@ -591,6 +591,14 @@ If you run SimplenoteSync on an empty local folder without a
 "simplenotesync.db" file, the net result will be to copy the remote notes to
 the local folder, effectively performing a backup.
 
+=head1 FAQ
+
+* Why can I download notes from Simplenote, but local notes aren't being
+  uploaded?
+
+Do the text files end in ".txt"? For documents to be recognized as text files
+to be uploaded, they have to have that file extension.
+
 =head1 TROUBLESHOOTING
 
 If SimplenoteSync isn't working, I've tried to add more (and better) error
