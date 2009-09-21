@@ -68,7 +68,8 @@ TROUBLESHOOTING
     disable "$allow_local_updates" to protect your local data.
 
 KNOWN ISSUES
-    * No merging when both local and remote file are changed between syncs
+    * No merging when both local and remote file are changed between syncs -
+    this is planned for the future
 
     * the code is still somewhat ugly
 
