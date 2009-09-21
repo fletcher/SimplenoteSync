@@ -619,6 +619,10 @@ the local folder, effectively performing a backup.
 Do the text files end in ".txt"? For documents to be recognized as text files
 to be uploaded, they have to have that file extension.
 
+Text files can't be located in subdirectories - this script does not (by
+design) recurse folders looking for files (since they shouldn't be anywhere
+but the specified directory).
+
 =head1 TROUBLESHOOTING
 
 If SimplenoteSync isn't working, I've tried to add more (and better) error
