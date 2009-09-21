@@ -58,7 +58,7 @@ my $token;
 
 
 # Options
-my $debug = 1;					# enable log messages for troubleshooting
+my $debug = 0;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
