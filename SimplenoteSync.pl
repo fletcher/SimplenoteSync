@@ -623,6 +623,17 @@ Text files can't be located in subdirectories - this script does not (by
 design) recurse folders looking for files (since they shouldn't be anywhere
 but the specified directory).
 
+* When my note is downloaded from Simplenote and then changed locally, I end
+  up with two copies of the first line (one shorter than the other) - what
+  gives?
+
+If the first line of a note is too long to become the filename, it is trimmed
+to an appropriate length. To prevent losing data, the full line is preserved
+in the body. Since Simplenote doesn't have a concept of titles, the title
+becomes the first line (which is trimmed), and the original first line is now
+the third line (counting the blank line in between). Your only alternatives
+are to shorten the first line, split it in two, or to create a short title
+
 =head1 TROUBLESHOOTING
 
 If SimplenoteSync isn't working, I've tried to add more (and better) error
