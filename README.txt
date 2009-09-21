@@ -65,6 +65,16 @@ FAQ
     between). Your only alternatives are to shorten the first line, split it
     in two, or to create a short title
 
+    * If I rename a note, what happens?
+
+    If you rename a note on Simplenote by changing the first line, a new
+    text file will be created and the old one will be deleted, preserving
+    the original creation date. If you rename a text file locally, the old
+    note on Simplenote will be deleted and a new one will be created, again
+    preserving the original creation date. In the second instance, there is
+    not actually any recognition of a "rename" going on - simply the
+    recognition that an old note was deleted and a new one exists.
+
 TROUBLESHOOTING
     If SimplenoteSync isn't working, I've tried to add more (and better)
     error messages. Common problems so far include:
@@ -89,7 +99,8 @@ KNOWN ISSUES
     numbers of notes
 
     * renaming notes or text files causes it to be treated as a new note -
-    probably not all bad, but not sure what else to do
+    probably not all bad, but not sure what else to do. For now, you'll have
+    to manually delete the old copy
 
     * No two notes can share the same title (in this event, only one will be
     downloaded locally, the others will trigger a warning at each sync)
