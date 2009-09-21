@@ -8,7 +8,6 @@
 #
 
 # TODO: Need lots of error checking
-# TODO: How to handle renames?
 # TODO: How to handle simultaneous edits?
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
 # TODO: Windows/Linux compatibility
@@ -59,7 +58,7 @@ my $token;
 
 
 # Options
-my $debug = 0;					# enable log messages for troubleshooting
+my $debug = 1;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
@@ -261,6 +260,7 @@ sub downloadNoteToFile {
 		if (($overwrite == 1) && ($allow_local_updates)) {
 			# If we're in overwrite mode, then delete local copy
 			File::Path::rmtree("$directory/$filename");
+			$deletedFromDatabase{$key} = 1;
 			
 			if ($store_base_text) {
 				# Delete storage copy
@@ -270,7 +270,7 @@ sub downloadNoteToFile {
 			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
 			$deletedFromDatabase{$key} = 1;
 		}
-		return;
+		return "";
 	}
 	
 	# Get time of note creation (trim fractions of seconds)
@@ -292,6 +292,8 @@ sub downloadNoteToFile {
 		# A file already exists with that name, and we're not intentionally
 		#	replacing with a new copy.
 		warn "$filename already exists. Will not download.\n";
+		
+		return "";
 	} else {
 		if ($allow_local_updates) {
 			open (FILE, ">$directory/$filename");
@@ -310,14 +312,17 @@ sub downloadNoteToFile {
 			utime $create, $create, "$directory/$filename";
 			utime $create, $modify, "$directory/$filename";
 
+			$newNotes{$key}{modify} = $modifyString;
+			$newNotes{$key}{create} = $createString;
+			$newNotes{$key}{file} = $filename;
+			$newNotes{$key}{title} = $title;
+
 			# Add this note to the sync'ed list for writing to database
+			return $filename;
 		}
-	
-		$newNotes{$key}{modify} = $modifyString;
-		$newNotes{$key}{create} = $createString;
-		$newNotes{$key}{file} = $filename;
-		$newNotes{$key}{title} = $title;
 	}
+	
+	return "";
 }
 
 
@@ -413,7 +418,16 @@ sub synchronizeNotesToFolder {
 						print "\tremote file is changed\n" if $debug;
 
 						# update local file and overwrite if necessary
-						downloadNoteToFile($key,$directory,1);
+						my $newFile = downloadNoteToFile($key,$directory,1);
+
+						if (($newFile ne $filename) && ($newFile ne "")) {
+							warn "Deleting $filename as it was renamed to $newFile\n";
+							# The file was renamed on server; delete old copy
+							if ($allow_local_updates) {
+								File::Path::rmtree("$directory/$filename");								
+								delete($file{"$directory/$filename"});
+							}
+						}
 					}
 
 					# Remove this file from other queues
@@ -634,6 +648,16 @@ becomes the first line (which is trimmed), and the original first line is now
 the third line (counting the blank line in between). Your only alternatives
 are to shorten the first line, split it in two, or to create a short title
 
+* If I rename a note, what happens?
+
+If you rename a note on Simplenote by changing the first line, a new text file
+will be created and the old one will be deleted, preserving the original
+creation date. If you rename a text file locally, the old note on Simplenote
+will be deleted and a new one will be created, again preserving the original
+creation date. In the second instance, there is not actually any recognition
+of a "rename" going on - simply the recognition that an old note was deleted
+and a new one exists.
+
 =head1 TROUBLESHOOTING
 
 If SimplenoteSync isn't working, I've tried to add more (and better) error
@@ -660,7 +684,8 @@ protect your local data.
   numbers of notes
 
 * renaming notes or text files causes it to be treated as a new note -
-  probably not all bad, but not sure what else to do
+  probably not all bad, but not sure what else to do. For now, you'll have to
+  manually delete the old copy
 
 * No two notes can share the same title (in this event, only one will be
   downloaded locally, the others will trigger a warning at each sync)
