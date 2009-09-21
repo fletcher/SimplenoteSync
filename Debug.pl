@@ -13,6 +13,16 @@
 # 
 # Of note, it will log the titles of files on your computer, but will not log 
 # your email address or password.
+#
+#
+# So, do the following:
+#	Enable debug mode in SimplenoteSync.pl
+#	Run "SimplenoteSync.pl > ~/SimplenoteSyncDebug.txt"
+#	Run "Debug.pl"
+#	Open SimplenoteSyncDebug.txt and SimplenoteSyncLog.txt and make sure no 
+#		confidential information is included
+#	Email me copies of those two files along with a description of the problem
+#		that you're having
 
 use strict;
 use warnings;
