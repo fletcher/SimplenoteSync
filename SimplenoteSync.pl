@@ -244,6 +244,16 @@ sub downloadNoteToFile {
 	# Parse into title and content (if present)
 	$content =~ s/^(.*?)(\n{1,2}|\Z)//s;		# First line is title
 	my $title = $1;
+	my $divider = $2;
+	
+	# If first line is particularly long, it will get trimmed, so
+	# leave it in body, and make a short version for the title
+	if (length($title) > 240) {
+		# Restore first line to content and create new title
+		$content = $title . $divider . $content;
+		$title = trimTitle($title);
+	}
+	
 	my $filename = titleToFilename($title);
 		
 	# If note is marked for deletion on the server, don't download
@@ -310,6 +320,16 @@ sub downloadNoteToFile {
 	}
 }
 
+
+sub trimTitle {
+	# If title is too long, it won't be a valid filename
+	my $title = shift;
+		
+	$title =~ s/^(.{1,240}).*?$/$1/;
+	$title =~ s/(.*)\s.*?$/$1/;			# Try to trim at a word boundary
+
+	return $title;
+}
 
 sub deleteNoteOnline {
 	# Delete specified note from Simplenote server
