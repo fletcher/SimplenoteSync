@@ -16,13 +16,32 @@
 #
 #
 # So, do the following:
+#
+#	First - make sure that you synchronize your iPhone app so it and web app 
+#		are up to date
+#
+#	Make sure there is at least one note on the iPhone that is also on the web 
+#
+#	Synchronize iphone again if necessary
+#
+#	Make sure there is at least one text file in your local directory - 
+#		remember that this file must have ".txt" as the file extension
+#
+#	Make sure that you have the latest versions of this software from my web 
+#		site
+#
 #	Enable debug mode in SimplenoteSync.pl
+#
 #	Run "SimplenoteSync.pl > ~/SimplenoteSyncDebug.txt"
+#
 #	Run "Debug.pl"
+#
 #	Open SimplenoteSyncDebug.txt and SimplenoteSyncLog.txt and make sure no 
 #		confidential information is included
+#
 #	Email me copies of those two files along with a description of the problem
 #		that you're having
+#
 
 use strict;
 use warnings;
