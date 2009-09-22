@@ -7,10 +7,10 @@
 #
 #
 
-# TODO: Need lots of error checking
 # TODO: How to handle simultaneous edits?
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
-# TODO: Windows/Linux compatibility
+# TODO: Windows compatibility
+# TODO: Further testing on Linux
 
 use strict;
 use warnings;
@@ -382,8 +382,11 @@ sub synchronizeNotesToFolder {
 	# get list of existing local text files with mod/creation date
 	my %file = ();
 	
-	foreach my $filepath (glob("\"$directory/*.txt\"")) {
-		
+	my $glob_directory = $directory;
+	$glob_directory =~ s/ /\\ /g;
+	
+	foreach my $filepath (glob("$glob_directory/*.txt")) {
+		$filepath = abs_path($filepath);
 		my @d=gmtime ((stat("$filepath"))[9]);
 		$file{$filepath}{modify} = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
 
@@ -443,11 +446,11 @@ sub synchronizeNotesToFolder {
 				}
 			} else {
 				# local file appears changed
-				print "local file has changed\n" if $debug;
+				print "\tlocal file has changed\n" if $debug;
 
 				if ($note{$key}{modify} eq $last_mod_date) {
 					# but note on server is old
-					print "but server copy is unchanged\n" if $debug;
+					print "\tbut server copy is unchanged\n" if $debug;
 
 					# update note on server
 					uploadFileToNote("$directory/$filename",$key);
