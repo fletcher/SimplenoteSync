@@ -74,13 +74,29 @@ print LOG "$sync_directory\n\n";
 
 my $url = 'https://simple-note.appspot.com/api/';
 
+# Document Mac OS X version
+my $mac_version = readpipe ("sw_vers");
+
+print LOG "Mac OS X:\n$mac_version\n\n";
+
+
+# Document token (proof of successful login to Simplenote)
 my $token = getToken();
 print LOG "Token:\n$token\n\n";
 
+# Document contents of simplenote account (keys only - no private info)
 getNoteIndex();
 
+# Document list of ".txt" files in your specified directory, along with 
+#	mod/create times
 checkLocalDirectory();
 
+# Do a list of all files in the directory, in case user is forgetting about
+#	.txt extension
+my $filelist = readpipe("ls \"$sync_directory\"");
+print LOG "Complete file listing:\n$filelist\n\n";
+
+# append the contents of simplenotesync.db
 print LOG "simplenotesync.db:\n";
 close LOG;
 system ("cat \"$sync_directory/simplenotesync.db\" >> $ENV{HOME}/SimplenoteSyncLog.txt");
