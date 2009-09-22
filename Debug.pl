@@ -83,6 +83,7 @@ if ($sync_directory = abs_path($rc_directory)) {
 	# If a valid directory isn't specified, then don't keep going
 	die "$rc_directory does not appear to be a valid directory.\n";
 };
+$sync_directory =~ s/ /\\ /g;
 
 open (LOG, ">$ENV{HOME}/SimplenoteSyncLog.txt");
 print LOG ".simplenotesyncrc:\n";
@@ -108,17 +109,18 @@ getNoteIndex();
 
 # Document list of ".txt" files in your specified directory, along with 
 #	mod/create times
+print LOG "Looking for .txt files in \"$sync_directory\"\n";
 checkLocalDirectory();
 
 # Do a list of all files in the directory, in case user is forgetting about
 #	.txt extension
-my $filelist = readpipe("ls \"$sync_directory\"");
+my $filelist = readpipe("ls $sync_directory");
 print LOG "Complete file listing:\n$filelist\n\n";
 
 # append the contents of simplenotesync.db
 print LOG "simplenotesync.db:\n";
 close LOG;
-system ("cat \"$sync_directory/simplenotesync.db\" >> $ENV{HOME}/SimplenoteSyncLog.txt");
+system ("cat $sync_directory/simplenotesync.db >> $ENV{HOME}/SimplenoteSyncLog.txt");
 
 1;
 
@@ -126,13 +128,16 @@ sub getToken {
 	# Connect to server and get a authentication token
 
 	my $content = encode_base64("email=$email&password=$password");
+	
 	my $response =  $ua->post($url . "login", Content => $content);
 
 	if ($response->content =~ /Invalid argument/) {
 		die "Problem connecting to web server.\nHave you installed Crypt:SSLeay as instructed?\n";
 	}
 
+
 	die "Error logging into Simplenote server:\n$response->content\n" unless $response->is_success;
+
 
 	return $response->content;
 }
@@ -151,7 +156,7 @@ sub getNoteIndex {
 
 sub checkLocalDirectory {
 	print LOG "Local Files:\n";
-	foreach my $filepath (glob("\"$sync_directory/*.txt\"")) {
+	foreach my $filepath (glob("$sync_directory/*.txt")) {
 		
 		print LOG "$filepath:\n";
 		my @d=gmtime ((stat("$filepath"))[9]);
