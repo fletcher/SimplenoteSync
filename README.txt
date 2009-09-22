@@ -1,12 +1,13 @@
 NAME
-    SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
+    SimplenoteSync.pl --- synchronize a folder of text files with
+    Simplenote.
 
     Of note, this software is not created by or endorsed by Cloud Factory,
     the creators of Simplenote, or anyone else for that matter.
 
 CONFIGURATION
-    BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF
-    YOU AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!
+    **BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED.
+    IF YOU AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!**
 
     Create file in your home directory named ".simplenotesyncrc" with the
     following contents:
@@ -20,7 +21,7 @@ CONFIGURATION
     Unfortunately, you have to install Crypt::SSLeay to get https to work.
     You can do this by running the following command as an administrator:
 
-    sudo perl -MCPAN -e "install Crypt::SSLeay"
+        sudo perl -MCPAN -e "install Crypt::SSLeay"
 
 DESCRIPTION
     After specifying a folder to store local text files, and the email
@@ -36,44 +37,85 @@ DESCRIPTION
     (or notes) afterwards.
 
 WARNING
-    Please note that this software is still in development stages - I
+    Please note that this software is still in development stages --- I
     STRONGLY urge you to backup all of your data before running to ensure
     nothing is lost. If you run SimplenoteSync on an empty local folder
     without a "simplenotesync.db" file, the net result will be to copy the
     remote notes to the local folder, effectively performing a backup.
 
+INSTALLATION
+    Download the latest copy of SimplenoteSync.pl from github:
+
+    <http://github.com/fletcher/SimplenoteSync>
+
+FEATURES
+    * Bidirectional synchronization between the Simplenote web site and a
+    local directory of text files on your computer
+
+    * Ability to upload notes to your iPhone without typing them by hand
+
+    * Ability to backup the notes on your iPhone
+
+    * Perform synchronizations automatically by using cron
+
+    * Should handle unicode characters in title and content (works for me in
+    some basic tests, but let me know if you have trouble)
+
+    * The ability to manipulate your notes (via the local text files) using
+    other applications (e.g. [Notational Velocity](http://notational.net/)
+    if you use "Plain Text Files" for storage, TaskPaper, shell scripts,
+    etc.) - you're limited only by your imagination
+
+    * COMING SOON --- The ability to attempt to merge changes if a note is
+    changed locally and on the server simultaneously
+
+LIMITATIONS
+    * Certain characters are prohibited in filenames (:,\,/) - if present in
+    the title, they are stripped out.
+
+    * If the simplenotesync.db file is lost, SimplenoteSync.pl is currently
+    unable to realize that a text file and a note represent the same object
+    --- instead you should move your local text files, do a fresh sync to
+    download all notes locally, and manually replace any missing notes.
+
+    * Simplenote supports multiple notes with the same title, but two files
+    cannot share the same filename. If you have two notes with the same
+    title, only one will be downloaded. I suggest changing the title of the
+    other note.
+
 FAQ
     * Why can I download notes from Simplenote, but local notes aren't being
     uploaded?
 
-    Do the text files end in ".txt"? For documents to be recognized as text
-    files to be uploaded, they have to have that file extension.
+        Do the text files end in ".txt"? For documents to be recognized as
+        text files to be uploaded, they have to have that file extension.
 
-    Text files can't be located in subdirectories - this script does not (by
-    design) recurse folders looking for files (since they shouldn't be
-    anywhere but the specified directory).
+        Text files can't be located in subdirectories - this script does not
+        (by design) recurse folders looking for files (since they shouldn't
+        be anywhere but the specified directory).
 
     * When my note is downloaded from Simplenote and then changed locally, I
     end up with two copies of the first line (one shorter than the other) -
     what gives?
 
-    If the first line of a note is too long to become the filename, it is
-    trimmed to an appropriate length. To prevent losing data, the full line
-    is preserved in the body. Since Simplenote doesn't have a concept of
-    titles, the title becomes the first line (which is trimmed), and the
-    original first line is now the third line (counting the blank line in
-    between). Your only alternatives are to shorten the first line, split it
-    in two, or to create a short title
+        If the first line of a note is too long to become the filename, it
+        is trimmed to an appropriate length. To prevent losing data, the
+        full line is preserved in the body. Since Simplenote doesn't have a
+        concept of titles, the title becomes the first line (which is
+        trimmed), and the original first line is now the third line
+        (counting the blank line in between). Your only alternatives are to
+        shorten the first line, split it in two, or to create a short title
 
     * If I rename a note, what happens?
 
-    If you rename a note on Simplenote by changing the first line, a new
-    text file will be created and the old one will be deleted, preserving
-    the original creation date. If you rename a text file locally, the old
-    note on Simplenote will be deleted and a new one will be created, again
-    preserving the original creation date. In the second instance, there is
-    not actually any recognition of a "rename" going on - simply the
-    recognition that an old note was deleted and a new one exists.
+        If you rename a note on Simplenote by changing the first line, a new
+        text file will be created and the old one will be deleted,
+        preserving the original creation date. If you rename a text file
+        locally, the old note on Simplenote will be deleted and a new one
+        will be created, again preserving the original creation date. In the
+        second instance, there is not actually any recognition of a "rename"
+        going on - simply the recognition that an old note was deleted and a
+        new one exists.
 
 TROUBLESHOOTING
     If SimplenoteSync isn't working, I've tried to add more (and better)
@@ -89,6 +131,10 @@ TROUBLESHOOTING
     remote data, you can disable "$allow_server_updates". Or, you can
     disable "$allow_local_updates" to protect your local data.
 
+    Additionally, there is a script "Debug.pl" that will generate a text
+    file with some useful information to email to me if you continue to have
+    trouble.
+
 KNOWN ISSUES
     * No merging when both local and remote file are changed between syncs -
     this is planned for the future
@@ -101,9 +147,6 @@ KNOWN ISSUES
     * renaming notes or text files causes it to be treated as a new note -
     probably not all bad, but not sure what else to do. For now, you'll have
     to manually delete the old copy
-
-    * No two notes can share the same title (in this event, only one will be
-    downloaded locally, the others will trigger a warning at each sync)
 
 SEE ALSO
     Designed for use with Simplenote for iPhone:

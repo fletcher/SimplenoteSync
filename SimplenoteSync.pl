@@ -10,7 +10,7 @@
 # TODO: How to handle simultaneous edits?
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
 # TODO: Windows compatibility
-# TODO: Further testing on Linux
+# TODO: Further testing on Linux - mainly file creation time
 
 use strict;
 use warnings;
@@ -23,7 +23,8 @@ use LWP::UserAgent;
 my $ua = LWP::UserAgent->new;
 use Time::Local;
 use File::Copy;
-
+use Encode 'decode_utf8';
+use Encode;
 
 # Configuration
 #
@@ -63,6 +64,9 @@ my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
 
+
+# On which OS are we running?
+my $os = $^O;	# Mac = darwin; Linux = linux; Windows contains MSWin
 
 # Initialize Database of last sync information into global array
 my $hash_ref = initSyncDatabase($sync_directory);
@@ -176,12 +180,27 @@ sub uploadFileToNote {
 	$content .= <INPUT>;
 	close(INPUT);
 
-	my @d=gmtime ((stat("$filepath"))[9]);		# get file's modification time
+	# Check to make sure text file is encoded as UTF-8
+	if (eval { decode_utf8($content, Encode::FB_CROAK); 1 }) {
+		# $content is valid utf8
+	} else {
+		# $content is not valid utf8 - assume it's macroman and convert
+		warn "$filepath is not a UTF-8 file. Will try to convert\n" if $debug;
+		$content = decode('MacRoman', $content);
+		utf8::encode($content);
+	}
+
+	my @d = gmtime ((stat("$filepath"))[9]);	# get file's modification time
 	my $modified = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
 
-
-	# The following works on Mac OS X - need a "birth time", not ctime
-	@d = gmtime (readpipe ("stat -f \"%B\" \"$filepath\""));	# created time
+	if ($os =~ /darwin/i) {
+		# The following works on Mac OS X - need a "birth time", not ctime
+		@d = gmtime (readpipe ("stat -f \"%B\" \"$filepath\""));	# created time		
+	} else {
+		# TODO: Need a better way to do this on non Mac systems
+		@d = gmtime ((stat("$filepath"))[9]);	# get file's modification time
+	}
+	
 	my $created = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
 
 	if (defined($key)) {
@@ -583,7 +602,7 @@ sub writeSyncDatabase{
 
 =head1 NAME
 
-SimplenoteSync.pl - synchronize a folder of text files with Simplenote.
+SimplenoteSync.pl --- synchronize a folder of text files with Simplenote.
 
 
 Of note, this software is not created by or endorsed by Cloud Factory, the
@@ -591,8 +610,8 @@ creators of Simplenote, or anyone else for that matter.
 
 =head1 CONFIGURATION
 
-BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF YOU
-AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!
+**BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF YOU
+AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!**
 
 Create file in your home directory named ".simplenotesyncrc" with the
 following contents:
@@ -606,7 +625,11 @@ following contents:
 Unfortunately, you have to install Crypt::SSLeay to get https to work. You can
 do this by running the following command as an administrator:
 
+=over
+
 sudo perl -MCPAN -e "install Crypt::SSLeay"
+
+=back
 
 =head1 DESCRIPTION
 
@@ -622,16 +645,62 @@ Simplenote), and then start adding files (or notes) afterwards.
 
 =head1 WARNING
 
-Please note that this software is still in development stages - I STRONGLY
+Please note that this software is still in development stages --- I STRONGLY
 urge you to backup all of your data before running to ensure nothing is lost.
 If you run SimplenoteSync on an empty local folder without a
 "simplenotesync.db" file, the net result will be to copy the remote notes to
 the local folder, effectively performing a backup.
 
+
+=head1 INSTALLATION
+
+Download the latest copy of SimplenoteSync.pl from github:
+
+<http://github.com/fletcher/SimplenoteSync>
+
+=head1 FEATURES
+
+* Bidirectional synchronization between the Simplenote web site and a local
+  directory of text files on your computer
+
+* Ability to upload notes to your iPhone without typing them by hand
+
+* Ability to backup the notes on your iPhone
+
+* Perform synchronizations automatically by using cron
+
+* Should handle unicode characters in title and content (works for me in some
+  basic tests, but let me know if you have trouble)
+
+* The ability to manipulate your notes (via the local text files) using other
+  applications (e.g. [Notational Velocity](http://notational.net/) if you use
+  "Plain Text Files" for storage, TaskPaper, shell scripts, etc.) - you're
+  limited only by your imagination
+
+* COMING SOON --- The ability to attempt to merge changes if a note is changed
+  locally and on the server simultaneously
+
+=head1 LIMITATIONS
+
+* Certain characters are prohibited in filenames (:,\,/) - if present in the
+  title, they are stripped out.
+
+* If the simplenotesync.db file is lost, SimplenoteSync.pl is currently unable
+  to realize that a text file and a note represent the same object --- instead
+  you should move your local text files, do a fresh sync to download all notes
+  locally, and manually replace any missing notes.
+
+* Simplenote supports multiple notes with the same title, but two files cannot
+  share the same filename. If you have two notes with the same title, only one
+  will be downloaded. I suggest changing the title of the other note.
+
+
 =head1 FAQ
 
 * Why can I download notes from Simplenote, but local notes aren't being
   uploaded?
+
+=over
 
 Do the text files end in ".txt"? For documents to be recognized as text files
 to be uploaded, they have to have that file extension.
@@ -640,9 +709,13 @@ Text files can't be located in subdirectories - this script does not (by
 design) recurse folders looking for files (since they shouldn't be anywhere
 but the specified directory).
 
+=back
+
 * When my note is downloaded from Simplenote and then changed locally, I end
   up with two copies of the first line (one shorter than the other) - what
   gives?
+
+=over
 
 If the first line of a note is too long to become the filename, it is trimmed
 to an appropriate length. To prevent losing data, the full line is preserved
@@ -651,7 +724,11 @@ becomes the first line (which is trimmed), and the original first line is now
 the third line (counting the blank line in between). Your only alternatives
 are to shorten the first line, split it in two, or to create a short title
 
+=back
+
 * If I rename a note, what happens?
+
+=over
 
 If you rename a note on Simplenote by changing the first line, a new text file
 will be created and the old one will be deleted, preserving the original
@@ -660,6 +737,8 @@ will be deleted and a new one will be created, again preserving the original
 creation date. In the second instance, there is not actually any recognition
 of a "rename" going on - simply the recognition that an old note was deleted
 and a new one exists.
+
+=back
 
 =head1 TROUBLESHOOTING
 
@@ -676,6 +755,9 @@ to copy files to your computer without risking your remote data, you can
 disable "$allow_server_updates". Or, you can disable "$allow_local_updates" to
 protect your local data.
 
+Additionally, there is a script "Debug.pl" that will generate a text file with
+some useful information to email to me if you continue to have trouble.
+
 =head1 KNOWN ISSUES
 
 * No merging when both local and remote file are changed between syncs - this
@@ -689,9 +771,6 @@ protect your local data.
 * renaming notes or text files causes it to be treated as a new note -
   probably not all bad, but not sure what else to do. For now, you'll have to
   manually delete the old copy
-
-* No two notes can share the same title (in this event, only one will be
-  downloaded locally, the others will trigger a warning at each sync)
 
 
 =head1 SEE ALSO
