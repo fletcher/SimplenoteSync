@@ -77,7 +77,7 @@ if ($rc_directory eq "") {
 	# If a valid directory isn't specified, then don't keep going
 	die "A directory was not specified.\n";
 };
-
+$rc_directory =~ s/\\ / /g;
 if ($sync_directory = abs_path($rc_directory)) {
 } else {
 	# If a valid directory isn't specified, then don't keep going
