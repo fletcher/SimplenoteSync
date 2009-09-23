@@ -53,7 +53,7 @@ $rc_directory =~ s/\\ / /g;
 if ($sync_directory = abs_path($rc_directory)) {
 } else {
 	# If a valid directory isn't specified, then don't keep going
-	die "$rc_directory does not appear to be a valid directory.\n";
+	die "\"$rc_directory\" does not appear to be a valid directory.\n";
 };
 
 my $url = 'https://simple-note.appspot.com/api/';
@@ -386,7 +386,7 @@ sub synchronizeNotesToFolder {
 
 	if (! -d $directory) {
 		# Target directory doesn't exist
-		die "Destination directory $directory does not exist\n";
+		die "Destination directory \"$directory\" does not exist\n";
 	}
 	
 	my $storage_directory = "$directory/SimplenoteSync Storage";
