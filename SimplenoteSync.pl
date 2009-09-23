@@ -289,6 +289,9 @@ sub downloadNoteToFile {
 			}
 		} else {
 			warn "note $key was flagged for deletion on server - not downloaded\n" if $debug;
+			# Optionally, could add "&dead=1" to force Simplenote to remove
+			#	this note from the database. Could cause problems on iPhone
+			#	Just for future reference....
 			$deletedFromDatabase{$key} = 1;
 		}
 		return "";
