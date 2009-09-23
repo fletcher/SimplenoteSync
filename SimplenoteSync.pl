@@ -676,8 +676,9 @@ Download the latest copy of SimplenoteSync.pl from github:
 
 * The ability to manipulate your notes (via the local text files) using other
   applications (e.g. [Notational Velocity](http://notational.net/) if you use
-  "Plain Text Files" for storage, TaskPaper, shell scripts, etc.) - you're
-  limited only by your imagination
+  "Plain Text Files" for storage, shell scripts, AppleScript, 
+  [TaskPaper](http://www.hogbaysoftware.com/products/taskpaper), etc.) -
+  you're limited only by your imagination
 
 * COMING SOON --- The ability to attempt to merge changes if a note is changed
   locally and on the server simultaneously
