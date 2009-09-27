@@ -18,6 +18,9 @@ CONFIGURATION
 
     3. Third line is the directory to be used for text files
 
+    4. Fourth (optional line) is a file extension to use (defaults to "txt"
+    if none specified)
+
     Unfortunately, you have to install Crypt::SSLeay to get https to work.
     You can do this by running the following command as an administrator:
 
@@ -90,6 +93,8 @@ FAQ
 
         Do the text files end in ".txt"? For documents to be recognized as
         text files to be uploaded, they have to have that file extension.
+        *Unless* you have specified an alternate file extension to use in
+        ".simplenotesyncrc".
 
         Text files can't be located in subdirectories - this script does not
         (by design) recurse folders looking for files (since they shouldn't

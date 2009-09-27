@@ -9,7 +9,7 @@
 
 # TODO: How to handle simultaneous edits?
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
-# TODO: Windows compatibility
+# TODO: Windows compatibility?? This has not been tested AT ALL yet
 # TODO: Further testing on Linux - mainly file creation time
 
 use strict;
@@ -38,10 +38,11 @@ open (CONFIG, "<$ENV{HOME}/.simplenotesyncrc") or die "Unable to load config fil
 my $email = <CONFIG>;
 my $password = <CONFIG>;
 my $rc_directory = <CONFIG>;
+my $file_extension = <CONFIG>;
 my $sync_directory;
 
 close CONFIG;
-chomp ($email, $password, $rc_directory);
+chomp ($email, $password, $rc_directory, $file_extension);
 
 if ($rc_directory eq "") {
 	# If a valid directory isn't specified, then don't keep going
@@ -55,6 +56,12 @@ if ($sync_directory = abs_path($rc_directory)) {
 	# If a valid directory isn't specified, then don't keep going
 	die "\"$rc_directory\" does not appear to be a valid directory.\n";
 };
+
+$file_extension =~ s/^\s*\.(.*?)\s*$/$1/;
+
+if ($file_extension =~ /^\s*$/) {
+	$file_extension = "txt";
+}
 
 my $url = 'https://simple-note.appspot.com/api/';
 my $token;
@@ -152,7 +159,7 @@ sub titleToFilename {
 	# Strip prohibited characters
 	$title =~ s/[:\\\/]/ /g;
 	
-	$title .= ".txt";
+	$title .= ".$file_extension";
 	
 	return $title;
 }
@@ -163,7 +170,7 @@ sub filenameToTitle {
 	my $filename = shift;
 	
 	$filename = basename ($filename);
-	$filename =~ s/\.txt$//;
+	$filename =~ s/\.$file_extension$//;
 	
 	return $filename;
 }
@@ -409,7 +416,7 @@ sub synchronizeNotesToFolder {
 	my $glob_directory = $directory;
 	$glob_directory =~ s/ /\\ /g;
 	
-	foreach my $filepath (glob("$glob_directory/*.txt")) {
+	foreach my $filepath (glob("$glob_directory/*.$file_extension")) {
 		$filepath = abs_path($filepath);
 		my @d=gmtime ((stat("$filepath"))[9]);
 		$file{$filepath}{modify} = sprintf "%4d-%02d-%02d %02d:%02d:%02d", $d[5]+1900,$d[4]+1,$d[3],$d[2],$d[1],$d[0];
@@ -627,6 +634,9 @@ following contents:
 
 3. Third line is the directory to be used for text files
 
+4. Fourth (optional line) is a file extension to use (defaults to "txt" if
+none specified)
+
 Unfortunately, you have to install Crypt::SSLeay to get https to work. You can
 do this by running the following command as an administrator:
 
@@ -709,7 +719,8 @@ Download the latest copy of SimplenoteSync.pl from github:
 =over
 
 Do the text files end in ".txt"? For documents to be recognized as text files
-to be uploaded, they have to have that file extension.
+to be uploaded, they have to have that file extension. *Unless* you have
+specified an alternate file extension to use in ".simplenotesyncrc".
 
 Text files can't be located in subdirectories - this script does not (by
 design) recurse folders looking for files (since they shouldn't be anywhere
