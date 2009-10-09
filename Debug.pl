@@ -7,7 +7,8 @@
 #
 #
 
-# This routine is designed to create a log file that I can use to try and help # debug when SimplenoteSync isn't working.
+# This routine is designed to create a log file that I can use to try and help 
+# debug when SimplenoteSync isn't working.
 # If we hit a point where we need it, I'll ask you to send me a copy of the 
 # log file from your home directory
 # 
