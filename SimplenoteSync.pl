@@ -7,6 +7,7 @@
 #
 #
 
+# TODO: cache authentication token between runs
 # TODO: How to handle simultaneous edits?
 # TODO: need to compare information between local and remote files when same title in both (e.g. simplenotesync.db lost, or collision)
 # TODO: Windows compatibility?? This has not been tested AT ALL yet
@@ -72,7 +73,7 @@ my $debug = 0;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
-
+my $flag_network_traffic = 0;	# Print a warning for each network call
 
 # On which OS are we running?
 my $os = $^O;	# Mac = darwin; Linux = linux; Windows contains MSWin
@@ -109,6 +110,8 @@ sub getToken {
 	# Connect to server and get a authentication token
 
 	my $content = encode_base64("email=$email&password=$password");
+
+	warn "Network: get token\n" if $flag_network_traffic;
 	my $response =  $ua->post($url . "login", Content => $content);
 
 	if ($response->content =~ /Invalid argument/) {
@@ -124,7 +127,8 @@ sub getToken {
 sub getNoteIndex {
 	# Get list of notes from simplenote server
 	my %note = ();
-
+	
+	warn "Network: get note index\n" if $flag_network_traffic;
 	my $response = $ua->get($url . "index?auth=$token&email=$email");
 	my $index = $response->content;
 	
@@ -217,6 +221,7 @@ sub uploadFileToNote {
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 
+		warn "Network: update existing note\n" if $flag_network_traffic;
 		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 	} else {
 		# We are creating a new note
@@ -224,6 +229,7 @@ sub uploadFileToNote {
 		my $modifyString = $modified ? "&modify=$modified" : "";
 		my $createString = $created ? "&create=$created" : "";
 
+		warn "Network: create new note\n" if $flag_network_traffic;
 		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 		
 		# Return the key of the newly created note
@@ -258,6 +264,8 @@ sub downloadNoteToFile {
 	my $storage_directory = "$directory/SimplenoteSync Storage";
 	
 	# retrieve note
+
+	warn "Network: retrieve existing note\n" if $flag_network_traffic;
 	my $response = $ua->get($url . "note?key=$key&auth=$token&email=$email&encode=base64");
 	my $content = decode_base64($response->content);
 
@@ -372,6 +380,7 @@ sub deleteNoteOnline {
 	my $key = shift;
 	
 	if ($allow_server_updates) {
+		warn "Network: delete note\n" if $flag_network_traffic;
 		my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email");
 		return $response->content;
 	} else {
