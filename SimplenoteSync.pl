@@ -69,7 +69,7 @@ my $token;
 
 
 # Options
-my $debug = 0;					# enable log messages for troubleshooting
+my $debug = 1;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
@@ -459,16 +459,26 @@ sub synchronizeNotesToFolder {
 					} else {
 						# note on server has changed, but local file hasn't
 						print "\tremote file is changed\n" if $debug;
-
-						# update local file and overwrite if necessary
-						my $newFile = downloadNoteToFile($key,$directory,1);
-
-						if (($newFile ne $filename) && ($newFile ne "")) {
-							warn "Deleting $filename as it was renamed to $newFile\n";
-							# The file was renamed on server; delete old copy
+						
+						if ($note{$key}{deleted} eq "true") {
+							# Remote note was flagged for deletion
+							warn "Deleting $filename as it was deleted on server\n";
 							if ($allow_local_updates) {
-								File::Path::rmtree("$directory/$filename");								
+								File::Path::rmtree("$directory/$filename");
 								delete($file{"$directory/$filename"});
+							}
+						} else {
+							# Remote note not flagged for deletion
+							# update local file and overwrite if necessary
+							my $newFile = downloadNoteToFile($key,$directory,1);
+
+							if (($newFile ne $filename) && ($newFile ne "")) {
+								warn "Deleting $filename as it was renamed to $newFile\n";
+								# The file was renamed on server; delete old copy
+								if ($allow_local_updates) {
+									File::Path::rmtree("$directory/$filename");								
+									delete($file{"$directory/$filename"});
+								}
 							}
 						}
 					}
@@ -531,15 +541,25 @@ sub synchronizeNotesToFolder {
 				
 			} else {
 				# note on server has also changed
-				warn "$filename deleted locally but modified on server\n";
-
-				# So, download from the server to resync, and
-				#	user must then re-delete if desired
-				downloadNoteToFile($key,$directory,0);
 				
-				# Remove this file from other queues
-				delete($note{$key});
-				delete($file{"$directory/$filename"});
+				if ($note{$key}{deleted} eq "true") {
+					# note on server was deleted also
+					print "delete $filename\n" if $debug;
+					
+					# Don't do anything locally
+					delete($note{$key});
+					delete($file{"$directory/$filename"});
+				} else {
+					warn "$filename deleted locally but modified on server\n";
+
+					# So, download from the server to resync, and
+					#	user must then re-delete if desired
+					downloadNoteToFile($key,$directory,0);
+				
+					# Remove this file from other queues
+					delete($note{$key});
+					delete($file{"$directory/$filename"});
+				}
 			}
 		}
 	}
@@ -548,7 +568,9 @@ sub synchronizeNotesToFolder {
 	
 	foreach my $key (sort keys %note) {
 		# Download, but don't overwrite existing file if present
-		downloadNoteToFile($key, $directory,0);
+		if ($note{$key}{deleted} ne "true") {
+			downloadNoteToFile($key, $directory,0);			
+		}
 	}
 	
 	# Finally, we need to look at new files locally and upload to server
