@@ -73,7 +73,7 @@ my $debug = 0;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
-my $flag_network_traffic = 0;	# Print a warning for each network call
+my $flag_network_traffic = 1;	# Print a warning for each network call
 
 # On which OS are we running?
 my $os = $^O;	# Mac = darwin; Linux = linux; Windows contains MSWin
@@ -221,7 +221,7 @@ sub uploadFileToNote {
 		
 		my $modifyString = $modified ? "&modify=$modified" : "";
 
-		warn "Network: update existing note\n" if $flag_network_traffic;
+		warn "Network: update existing note \"$title\"\n" if $flag_network_traffic;
 		my $response = $ua->post($url . "note?key=$key&auth=$token&email=$email$modifyString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 	} else {
 		# We are creating a new note
@@ -229,7 +229,7 @@ sub uploadFileToNote {
 		my $modifyString = $modified ? "&modify=$modified" : "";
 		my $createString = $created ? "&create=$created" : "";
 
-		warn "Network: create new note\n" if $flag_network_traffic;
+		warn "Network: create new note \"$title\"\n" if $flag_network_traffic;
 		my $response = $ua->post($url . "note?auth=$token&email=$email$modifyString$createString", Content => encode_base64($title ."\n" . $content)) if ($allow_server_updates);
 		
 		# Return the key of the newly created note
@@ -265,7 +265,7 @@ sub downloadNoteToFile {
 	
 	# retrieve note
 
-	warn "Network: retrieve existing note\n" if $flag_network_traffic;
+	warn "Network: retrieve existing note \"$key\"\n" if $flag_network_traffic;
 	my $response = $ua->get($url . "note?key=$key&auth=$token&email=$email&encode=base64");
 	my $content = decode_base64($response->content);
 
@@ -380,7 +380,7 @@ sub deleteNoteOnline {
 	my $key = shift;
 	
 	if ($allow_server_updates) {
-		warn "Network: delete note\n" if $flag_network_traffic;
+		warn "Network: delete note \"$key\"\n" if $flag_network_traffic;
 		my $response = $ua->get($url . "delete?key=$key&auth=$token&email=$email");
 		return $response->content;
 	} else {
