@@ -42,6 +42,11 @@ my $rc_directory = <CONFIG>;
 my $file_extension = <CONFIG>;
 my $sync_directory;
 
+
+if (! defined ($file_extension)) {
+	$file_extension = "txt";
+}
+
 close CONFIG;
 chomp ($email, $password, $rc_directory, $file_extension);
 
@@ -73,7 +78,7 @@ my $debug = 0;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
-my $flag_network_traffic = 0;	# Print a warning for each network call
+my $flag_network_traffic = 1;	# Print a warning for each network call
 
 # On which OS are we running?
 my $os = $^O;	# Mac = darwin; Linux = linux; Windows contains MSWin
