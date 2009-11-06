@@ -78,7 +78,7 @@ my $debug = 0;					# enable log messages for troubleshooting
 my $allow_local_updates = 1;	# Allow changes to local text files
 my $allow_server_updates = 1;	# Allow changes to Simplenote server
 my $store_base_text = 0;		# Trial mode to allow conflict resolution
-my $flag_network_traffic = 1;	# Print a warning for each network call
+my $flag_network_traffic = 0;	# Print a warning for each network call
 
 # On which OS are we running?
 my $os = $^O;	# Mac = darwin; Linux = linux; Windows contains MSWin
@@ -749,6 +749,27 @@ Download the latest copy of SimplenoteSync.pl from github:
 
 =head1 FAQ
 
+* When I try to use SimplenoteSync, I get the following error:
+
+=over
+
+=over
+
+Network: get token
+
+Error logging into Simplenote server:
+
+HTTP::Response=HASH(0x1009b0110)->content
+
+=back
+
+The only time I have seen this error is when the username or password is
+entered into the configuration file incorrectly. Watch out for spaces at the
+end of lines.
+
+=back
+
+
 * Why can I download notes from Simplenote, but local notes aren't being
   uploaded?
 
@@ -814,7 +835,7 @@ some useful information to email to me if you continue to have trouble.
 =head1 KNOWN ISSUES
 
 * No merging when both local and remote file are changed between syncs - this
-  is planned for the future
+  might be enabled in the future
 
 * the code is still somewhat ugly
 
@@ -839,6 +860,10 @@ The SimplenoteSync homepage is:
 SimplenoteSync is available on github:
 
 <http://github.com/fletcher/SimplenoteSync>
+
+A Discussion list is also available:
+
+<http://groups.google.com/group/simplenotesync>
 
 =head1 AUTHOR
 
