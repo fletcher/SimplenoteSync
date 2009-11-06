@@ -1,4 +1,3 @@
-CSS: http://fletcherpenney.net/css/document.css
 
 # Name #
 
