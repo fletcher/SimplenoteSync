@@ -658,6 +658,11 @@ creators of Simplenote, or anyone else for that matter.
 
 =head1 CONFIGURATION
 
+**WARNING --- I am having an intermittent problem with the Simplenote server
+that causes files to be deleted intermittently. Please use with caution and
+backup your data**
+
+
 **BACKUP YOUR DATA BEFORE USING --- THIS PROJECT IS STILL BEING TESTED. IF YOU
 AREN'T CONFIDENT IN WHAT YOU'RE DOING, DON'T USE IT!!!!**
 
