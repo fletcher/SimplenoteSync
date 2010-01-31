@@ -10,6 +10,18 @@ the creators of Simplenote, or anyone else for that matter.
 
 # Configuration #
 
+**UPDATE** --- Notational Velocity now has built in synchronizing with
+Simplenote. I have not fully tested it, and can't vouch for or against it's
+quality. But, for anyone who is using Simplenotesync just so that their NV
+notes and Simplenotes stay in sync, it is probably a *much* easier way to
+accomplish this. Most of the support questions I get are from people who are
+not very experienced with the command-line --- Notational Velocity's built in
+support requires nothing more than your Simplenote user name and password.
+Additionally, I am now primarily using WriteRoom, and am not actively working
+on SimplenoteSync anymore. For more information, please visit:
+
+<http://fletcherpenney.net/2010/01/status_update_on_simplenotesync>
+
 **WARNING --- I am having an intermittent problem with the Simplenote server
 that causes files to be deleted intermittently. Please use with caution and
 backup your data**
