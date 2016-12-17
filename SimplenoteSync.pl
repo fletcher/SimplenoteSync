@@ -123,7 +123,8 @@ sub getToken {
 		die "Problem connecting to web server.\nHave you installed Crypt:SSLeay as instructed?\n";
 	}
 
-	die "Error logging into Simplenote server:\n$response->content\n" unless $response->is_success;
+	my $ret = $response->content;
+	die "Error logging into Simplenote server:\n$ret\n" unless $response->is_success;
 
 	return $response->content;
 }
